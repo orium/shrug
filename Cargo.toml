@@ -1,0 +1,7 @@
+[package]
+name = "shrug"
+version = "0.1.0"
+authors = ["Diogo Sousa <diogogsousa@gmail.com>"]
+edition = "2018"
+
+[dependencies]
