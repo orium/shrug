@@ -1,0 +1,23 @@
+language: rust
+dist: xenial
+
+os:
+  - linux
+  - osx
+  - windows
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+matrix:
+  allow_failures:
+    - rust: nightly
+
+install:
+  - rustup component add rustfmt
+  - cargo install cargo-deadlinks
+
+script:
+  - ./tools/check.sh

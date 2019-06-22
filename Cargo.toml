@@ -21,7 +21,8 @@ include = [
 ]
 
 [dependencies]
-gtk = "0.7"
+gtk = { version = "0.7",  features = ["v3_24"] }
+gio = { version = "0.7",  features = ["v2_58"] }
 
 [features]
 fatal-warnings = []
