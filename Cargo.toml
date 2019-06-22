@@ -1,7 +1,27 @@
 [package]
 name = "shrug"
-version = "0.1.0"
+version = "0.1.0-pre"
 authors = ["Diogo Sousa <diogogsousa@gmail.com>"]
+
 edition = "2018"
 
+homepage = "https://github.com/orium/shrug"
+repository = "https://github.com/orium/shrug"
+readme = "README.md"
+
+license = "MPL-2.0"
+
+# What to include when packaging.
+include = [
+    "/src/**/*.rs",
+    "/Cargo.toml",
+    "/LICENSE.md",
+    "/README.md",
+    "/release-notes.md",
+]
+
 [dependencies]
+gtk = "0.7"
+
+[features]
+fatal-warnings = []
