@@ -4,18 +4,24 @@
  */
 
 pub struct TextClipboard {
-    clipboard: gtk::Clipboard,
+    clipboards: [gtk::Clipboard; 3],
 }
 
 impl TextClipboard {
-    pub fn new() -> Option<TextClipboard> {
-        let display = gdk::Display::get_default()?;
-        let clipboard = gtk::Clipboard::get_default(&display)?;
-
-        Some(TextClipboard { clipboard })
+    pub fn new() -> TextClipboard {
+        TextClipboard {
+            clipboards: [
+                gtk::Clipboard::get(&gdk::SELECTION_CLIPBOARD),
+                gtk::Clipboard::get(&gdk::SELECTION_PRIMARY),
+                gtk::Clipboard::get(&gdk::SELECTION_SECONDARY),
+            ],
+        }
     }
 
     pub fn set(&self, string: &str) {
-        self.clipboard.set_text(string);
+        for clipboard in self.clipboards.iter() {
+            clipboard.set_text(string);
+            clipboard.store();
+        }
     }
 }

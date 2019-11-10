@@ -3,8 +3,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-use std::path::PathBuf;
 use std::collections::BTreeMap;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct Alias<'a> {
@@ -28,8 +28,8 @@ impl Config {
     pub fn from_config_file() -> Config {
         let config_file_path = Config::config_file_path();
 
-        let config_string = std::fs::read_to_string(config_file_path)
-            .expect("Failed to read configuration file");
+        let config_string =
+            std::fs::read_to_string(config_file_path).expect("Failed to read configuration file");
 
         Config::from_toml(&config_string)
     }

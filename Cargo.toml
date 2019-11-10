@@ -21,15 +21,20 @@ include = [
 ]
 
 [dependencies]
-gtk = { version = "=0.7.0",  features = ["v3_24"] } #WIP! this is because of a compilation problem which should be fixed soon
+gtk = { version = "0.7",  features = ["v3_24"] }
 gdk = { version = "0.11", features = ["v3_24"] }
 gio = { version = "0.7",  features = ["v2_58"] }
+glib = "0.8"
 toml = "0.5"
 dirs = "2"
 serde = "1"
 serde_derive = "1"
 sublime_fuzzy = "0.6"
 rayon = "1"
+psutil = "1" # WIP! remove
+libc = "0.2" # WIP! remove?
+signal-hook = "0.1" # WIP! remove
+tower = "0.3.0-alpha.1a"
 
 [features]
 fatal-warnings = []
