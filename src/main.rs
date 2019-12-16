@@ -62,7 +62,7 @@ fn build_ui(app: &gtk::Application, config: Config) {
     }
 
     let store: gtk::TreeStore =
-        gtk::TreeStore::new(&[gtk::Type::String, gtk::Type::String, gtk::Type::I64]);
+        gtk::TreeStore::new(&[glib::Type::String, glib::Type::String, glib::Type::I64]);
 
     for alias in config.aliases() {
         store.set(&store.append(None), &[0, 1, 2], &[&alias.key, &alias.value, &0]);

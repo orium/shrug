@@ -21,10 +21,10 @@ include = [
 ]
 
 [dependencies]
-gtk = { version = "0.7",  features = ["v3_24"] }
-gdk = { version = "0.11", features = ["v3_24"] }
-gio = { version = "0.7",  features = ["v2_58"] }
-glib = "0.8"
+gtk = { version = "0.8",  features = ["v3_24"] }
+gdk = { version = "0.12", features = ["v3_24"] }
+gio = { version = "0.8",  features = ["v2_60"] }
+glib = "0.9"
 toml = "0.5"
 dirs = "2"
 serde = "1"
