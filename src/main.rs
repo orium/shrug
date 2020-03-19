@@ -220,11 +220,17 @@ fn launch_application() {
 fn main() {
     let my_pid = std::process::id() as libc::pid_t;
 
-    for process in psutil::process::all().unwrap() {
-        if let Some(cmd) = process.cmdline_vec().unwrap() {
-            if my_pid != process.pid && cmd.first().map_or(false, |s| s.ends_with("shrug")) {
+    for process in psutil::process::processes().unwrap() {
+        let process = match process {
+            Ok(p) => p,
+            Err(_) => continue,
+        };
+
+        if let Ok(Some(cmd)) = process.cmdline_vec() {
+            let pid = process.pid() as libc::pid_t;
+            if my_pid != pid && cmd.first().map_or(false, |s| s.ends_with("shrug")) {
                 unsafe {
-                    libc::kill(process.pid, SIGUSR1);
+                    libc::kill(pid, SIGUSR1);
                 }
                 return;
             }
