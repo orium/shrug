@@ -32,7 +32,6 @@ serde_derive = "1"
 sublime_fuzzy = "0.6"
 rayon = "1"
 psutil = "3" # WIP! remove
-libc = "0.2" # WIP! remove?
 signal-hook = "0.1" # WIP! remove
 tower = "0.3.0-alpha.1a"
 
