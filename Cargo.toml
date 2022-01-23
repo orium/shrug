@@ -1,13 +1,25 @@
 [package]
 name = "shrug"
+description = "Easy access to your favourite strings"
 version = "0.1.0-pre"
 authors = ["Diogo Sousa <diogogsousa@gmail.com>"]
 
-edition = "2018"
+edition = "2021"
 
 homepage = "https://github.com/orium/shrug"
 repository = "https://github.com/orium/shrug"
+documentation = "https://docs.rs/shrug"
 readme = "README.md"
+
+keywords = [
+    "shortcut",
+    "strings",
+    "clipboard",
+]
+
+categories = [
+    "gui",
+]
 
 license = "MPL-2.0"
 
@@ -20,20 +32,25 @@ include = [
     "/release-notes.md",
 ]
 
+[badges]
+codecov = { repository = "orium/shrug", branch = "master", service = "github" }
+
 [dependencies]
-gtk = { version = "0.8",  features = ["v3_24"] }
-gdk = { version = "0.12", features = ["v3_24"] }
-gio = { version = "0.8",  features = ["v2_60"] }
-glib = "0.9"
-toml = "0.5"
-dirs = "2"
-serde = "1"
-serde_derive = "1"
-sublime_fuzzy = "0.6"
-rayon = "1"
-psutil = "3" # WIP! remove
-signal-hook = "0.1" # WIP! remove
-tower = "0.3.0-alpha.1a"
+gtk4 = { version = "0.4.4", features = ["v4_6"] }
+gdk4 = { version = "0.4.4", features = ["v4_6"] }
+gio = { version = "0.15.2", features = ["v2_70"] }
+glib = "0.15.2"
+toml = "0.5.8"
+dirs = "4.0.0"
+serde = "1.0.133"
+serde_derive = "1.0.133"
+sublime_fuzzy = "0.7.0"
+rayon = "1.5.1"
+
+# TODO Use official release when it is done: https://github.com/rust-psutil/rust-psutil/pull/96
+# WIP! remove.  use tower w/ an unix socket.
+psutil = { git = "https://github.com/mygnu/rust-psutil", rev = "c065bcc2a604d8ca0cd7ec481f2fc66cbdf819d0" }
+signal-hook = "0.3.13" # WIP! remove.  use tower w/ and unix socket.
 
 [features]
 fatal-warnings = []

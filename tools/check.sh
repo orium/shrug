@@ -30,7 +30,7 @@ cargo build --features fatal-warnings --all-targets
 echo 'Testing:'
 cargo test  --features fatal-warnings
 echo 'Checking documentation:'
-cargo doc --features fatal-warnings
+cargo doc --features fatal-warnings --document-private-items
 
 echo 'Checking links:'
 cargo deadlinks
@@ -39,6 +39,8 @@ echo 'Checking packaging:'
 cargo package --allow-dirty
 echo 'Checking code style:'
 cargo fmt -- --check
+echo 'Checking readme:'
+cargo rdme --check
 
 echo
 echo -e "${GREEN}Everything looks lovely!$NC"

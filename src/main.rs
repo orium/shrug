@@ -9,31 +9,30 @@
 
 mod config;
 mod text_clipboard;
-
 use crate::text_clipboard::TextClipboard;
 use config::Alias;
 use config::Config;
-use gdk::enums::key;
+use gdk::Key;
+use gdk4 as gdk;
 use gio::prelude::*;
+use glib::signal::Inhibit;
 use gtk::prelude::*;
+use gtk4 as gtk;
 use rayon::prelude::*;
 use signal_hook::iterator::Signals;
-use std::env::args;
 use sublime_fuzzy::FuzzySearch;
-use psutil::process::Signal;
 
 // WIP! review and organize.
 fn build_ui(app: &gtk::Application, config: Config) {
-    let glade_src = include_str!("window_main.glade");
+    let glade_src = include_str!("window_main.ui");
 
-    let builder = gtk::Builder::new_from_string(glade_src);
+    let builder = gtk::Builder::from_string(glade_src);
 
-    let window: gtk::Window = builder.get_object("window_main").unwrap();
+    let window: gtk::Window = builder.object("window_main").unwrap();
 
-    window.set_keep_above(true);
     window.set_application(Some(app));
 
-    let tree_view: gtk::TreeView = builder.get_object("tree_view").unwrap();
+    let tree_view: gtk::TreeView = builder.object("tree_view").unwrap();
 
     {
         let renderer = gtk::CellRendererText::new();
@@ -62,34 +61,35 @@ fn build_ui(app: &gtk::Application, config: Config) {
     }
 
     let store: gtk::TreeStore =
-        gtk::TreeStore::new(&[glib::Type::String, glib::Type::String, glib::Type::I64]);
+        gtk::TreeStore::new(&[glib::Type::STRING, glib::Type::STRING, glib::Type::I64]);
 
     for alias in config.aliases() {
-        store.set(&store.append(None), &[0, 1, 2], &[&alias.key, &alias.value, &0]);
+        store.set(&store.append(None), &[(0, &alias.key), (1, &alias.value), (2, &0i64)]);
     }
 
-    let sorted_store: gtk::TreeModelSort = gtk::TreeModelSort::new(&store);
+    let sorted_store: gtk::TreeModelSort = gtk::TreeModelSort::with_model(&store);
 
     sorted_store.set_sort_column_id(gtk::SortColumn::Index(2), gtk::SortType::Descending);
 
     tree_view.set_model(Some(&sorted_store));
 
-    if let Some(first_row) = sorted_store.get_iter_first() {
-        tree_view.get_selection().select_iter(&first_row);
+    if let Some(first_row) = sorted_store.iter_first() {
+        tree_view.selection().select_iter(&first_row);
     }
 
-    let search_entry: gtk::SearchEntry = builder.get_object("search_entry").unwrap();
-
-    let tree_view_clone = tree_view.clone();
+    let search_entry: gtk::SearchEntry = builder.object("search_entry").unwrap();
 
     // WIP! can we do this on every change?
-    search_entry.connect_search_changed(move |entry| {
-        if let Some(text) = entry.get_text().map(|s| s.to_string()) {
+    search_entry.connect_search_changed({
+        let tree_view = tree_view.clone();
+
+        move |entry| {
+            let text = entry.text().to_string();
             let mut scored_aliases: Vec<(Alias, i64)> = config
                 .aliases()
                 .par_bridge()
                 .map(|alias| {
-                    let score: i64 = FuzzySearch::new(&text, alias.key, false)
+                    let score: i64 = FuzzySearch::new(&text, alias.key)
                         .best_match()
                         .map(|m| m.score() as i64)
                         .unwrap_or(0);
@@ -104,13 +104,13 @@ fn build_ui(app: &gtk::Application, config: Config) {
             store.clear();
 
             scored_aliases.iter().for_each(|(alias, score)| {
-                store.set(&store.append(None), &[0, 1, 2], &[&alias.key, &alias.value, &score]);
+                store.set(&store.append(None), &[(0, &alias.key), (1, &alias.value), (2, &score)]);
             });
 
-            tree_view.get_selection().unselect_all();
+            tree_view.selection().unselect_all();
 
-            if let Some(first_row) = sorted_store.get_iter_first() {
-                tree_view.get_selection().select_iter(&first_row);
+            if let Some(first_row) = sorted_store.iter_first() {
+                tree_view.selection().select_iter(&first_row);
             }
         }
     });
@@ -120,21 +120,14 @@ fn build_ui(app: &gtk::Application, config: Config) {
         tree_view: &gtk::TreeView,
         search_entry: &gtk::SearchEntry,
     ) {
-        if let Some((_, row)) = tree_view.get_selection().get_selected() {
-            let str: String = tree_view
-                .get_model()
-                .unwrap()
-                .get_value(&row, 1)
-                .downcast()
-                .unwrap()
-                .get()
-                .unwrap();
+        if let Some((_, row)) = tree_view.selection().selected() {
+            let str: String = tree_view.model().unwrap().get_value(&row, 1).get().unwrap();
 
-            TextClipboard::new().set(&str);
+            TextClipboard::new(&gdk::Display::default().unwrap()).set(&str);
         }
 
         hide(window, search_entry);
-    };
+    }
 
     fn hide(window: &gtk::Window, search_entry: &gtk::SearchEntry) {
         window.hide();
@@ -146,65 +139,88 @@ fn build_ui(app: &gtk::Application, config: Config) {
     let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
     std::thread::spawn(move || {
-        let signals = Signals::new(&[signal_hook::SIGUSR1]).unwrap();
+        use signal_hook::consts::SIGUSR1;
+
+        let mut signals = Signals::new(&[SIGUSR1]).unwrap();
 
         for _ in signals.forever() {
             tx.send(()).unwrap();
         }
     });
 
-    let window_clone: gtk::Window = window.clone();
+    rx.attach(None, {
+        let window = window.clone();
 
-    rx.attach(None, move |_| {
-        window_clone.show_all();
-        glib::Continue(true)
+        move |_| {
+            window.show();
+            glib::Continue(true)
+        }
     });
 
-    window.connect_key_press_event(move |window, key_event| {
-        fn move_selection(tree_view: &gtk::TreeView, up: bool) {
-            let selection = tree_view.get_selection();
-            match selection.get_selected() {
-                Some((tree_model, tree_iter)) => {
-                    let moved = match up {
-                        true => tree_model.iter_previous(&tree_iter),
-                        false => tree_model.iter_next(&tree_iter),
-                    };
+    let key_press_controller: gtk::EventControllerKey = {
+        let window = window.clone();
+        let controller = gtk::EventControllerKey::new();
 
-                    if moved {
-                        selection.select_iter(&tree_iter);
+        // For whatever reason these keys can only be observed in the "release_key" event.
+        controller.connect_key_released({
+            let tree_view = tree_view.clone();
+
+            move |_, key, _, _| match key {
+                Key::Return => {
+                    paste_and_hide(&window, &tree_view, &search_entry);
+                }
+                Key::Escape => {
+                    hide(&window, &search_entry);
+                }
+                _ => (),
+            }
+        });
+
+        controller.connect_key_pressed({
+            let tree_view = tree_view.clone();
+
+            move |_, key, _, _| {
+                fn move_selection(tree_view: &gtk::TreeView, up: bool) {
+                    let selection = tree_view.selection();
+                    match selection.selected() {
+                        Some((tree_model, tree_iter)) => {
+                            let moved = match up {
+                                true => tree_model.iter_previous(&tree_iter),
+                                false => tree_model.iter_next(&tree_iter),
+                            };
+
+                            if moved {
+                                selection.select_iter(&tree_iter);
+                            }
+                        }
+                        None => (),
                     }
                 }
-                None => (),
-            }
-        }
 
-        match key_event.get_keyval() {
-            key::Return => {
-                paste_and_hide(&window, &tree_view_clone, &search_entry);
-                Inhibit(true)
+                match key {
+                    Key::Up => {
+                        move_selection(&tree_view, true);
+                        Inhibit(true)
+                    }
+                    Key::Down => {
+                        move_selection(&tree_view, false);
+                        Inhibit(true)
+                    }
+                    _ => Inhibit(false),
+                }
             }
-            key::Escape => {
-                hide(&window, &search_entry);
-                Inhibit(true)
-            }
-            key::Up => {
-                move_selection(&tree_view_clone, true);
-                Inhibit(true)
-            }
-            key::Down => {
-                move_selection(&tree_view_clone, false);
-                Inhibit(true)
-            }
-            _ => Inhibit(false),
-        }
-    });
+        });
 
-    window.show_all();
+        controller
+    };
+
+    window.add_controller(&key_press_controller);
+
+    window.show()
 }
 
 fn launch_application() {
-    let application = gtk::Application::new(None, Default::default())
-        .expect("Failed initializing gtk application");
+    let application = gtk::Application::new(None, Default::default());
 
     application.connect_activate(|app| {
         Config::create_file_if_nonexistent();
@@ -214,10 +230,12 @@ fn launch_application() {
         build_ui(app, config);
     });
 
-    application.run(&args().collect::<Vec<_>>());
+    application.run();
 }
 
 fn main() {
+    use psutil::process::Signal;
+
     let my_pid = std::process::id();
 
     for process in psutil::process::processes().expect("Failed to get process list") {
@@ -246,5 +264,5 @@ fn main() {
  * Proper error: no unwraps
  * README
  * make portable in terms of signals
- * travis
+ * github workflow
  */
