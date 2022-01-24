@@ -446,9 +446,9 @@ dependencies = [
 
 [[package]]
 name = "gtk4"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5020aeb559e0431930d66d85b8f16fc453fc0863466b13b7e1e1b800cf1a47b"
+checksum = "d6f9e36fb6db3d70edf5cea9f4a20928c1d08ed3f27697cfd2d21ca3d8ac4a2d"
 dependencies = [
  "bitflags",
  "cairo-rs",
