@@ -35,8 +35,10 @@ cargo doc --features fatal-warnings --document-private-items
 echo 'Checking links:'
 cargo deadlinks
 
-echo 'Checking packaging:'
-cargo package --allow-dirty
+
+# TODO Enable this if we ever want to publish this to crates.io.
+# echo 'Checking packaging:'
+# cargo package --allow-dirty
 echo 'Checking code style:'
 cargo fmt -- --check
 echo 'Checking readme:'

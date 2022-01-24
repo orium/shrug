@@ -7,6 +7,10 @@
 #![deny(clippy::correctness)]
 #![warn(clippy::pedantic)]
 
+//! # Shrug
+//!
+//! WIP!
+
 mod config;
 mod text_clipboard;
 use crate::text_clipboard::TextClipboard;
