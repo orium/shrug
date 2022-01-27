@@ -47,10 +47,5 @@ serde_derive = "1.0.133"
 sublime_fuzzy = "0.7.0"
 rayon = "1.5.1"
 
-# TODO Use official release when it is done: https://github.com/rust-psutil/rust-psutil/pull/96
-# WIP! remove.  use tower w/ an unix socket.
-psutil = { git = "https://github.com/mygnu/rust-psutil", rev = "c065bcc2a604d8ca0cd7ec481f2fc66cbdf819d0" }
-signal-hook = "0.3.13" # WIP! remove.  use tower w/ and unix socket.
-
 [features]
 fatal-warnings = []

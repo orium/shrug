@@ -61,7 +61,7 @@ impl Config {
         config_dir
     }
 
-    pub fn aliases<'a>(&'a self) -> impl Iterator<Item = Alias<'a>> {
+    pub fn aliases(&self) -> impl Iterator<Item = Alias<'_>> {
         self.aliases.iter().map(|(k, v)| Alias::new(k, v))
     }
 }

@@ -18,7 +18,7 @@ impl TextClipboard {
     }
 
     pub fn set(&self, string: &str) {
-        for clipboard in self.clipboards.iter() {
+        for clipboard in &self.clipboards {
             clipboard.set_text(string);
         }
     }

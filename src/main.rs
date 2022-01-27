@@ -13,6 +13,7 @@
 
 mod config;
 mod text_clipboard;
+
 use crate::text_clipboard::TextClipboard;
 use config::Alias;
 use config::Config;
@@ -23,11 +24,13 @@ use glib::signal::Inhibit;
 use gtk::prelude::*;
 use gtk4 as gtk;
 use rayon::prelude::*;
-use signal_hook::iterator::Signals;
+use std::os::unix::net::{UnixListener, UnixStream};
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use sublime_fuzzy::FuzzySearch;
 
 // WIP! review and organize.
-fn build_ui(app: &gtk::Application, config: Config) {
+fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListener>) {
     let glade_src = include_str!("window_main.ui");
 
     let builder = gtk::Builder::from_string(glade_src);
@@ -143,11 +146,7 @@ fn build_ui(app: &gtk::Application, config: Config) {
     let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
     std::thread::spawn(move || {
-        use signal_hook::consts::SIGUSR1;
-
-        let mut signals = Signals::new(&[SIGUSR1]).unwrap();
-
-        for _ in signals.forever() {
+        for _ in show_listener.incoming() {
             tx.send(()).unwrap();
         }
     });
@@ -180,38 +179,34 @@ fn build_ui(app: &gtk::Application, config: Config) {
             }
         });
 
-        controller.connect_key_pressed({
-            let tree_view = tree_view.clone();
+        controller.connect_key_pressed(move |_, key, _, _| {
+            fn move_selection(tree_view: &gtk::TreeView, up: bool) {
+                let selection = tree_view.selection();
+                match selection.selected() {
+                    Some((tree_model, tree_iter)) => {
+                        let moved = match up {
+                            true => tree_model.iter_previous(&tree_iter),
+                            false => tree_model.iter_next(&tree_iter),
+                        };
 
-            move |_, key, _, _| {
-                fn move_selection(tree_view: &gtk::TreeView, up: bool) {
-                    let selection = tree_view.selection();
-                    match selection.selected() {
-                        Some((tree_model, tree_iter)) => {
-                            let moved = match up {
-                                true => tree_model.iter_previous(&tree_iter),
-                                false => tree_model.iter_next(&tree_iter),
-                            };
-
-                            if moved {
-                                selection.select_iter(&tree_iter);
-                            }
+                        if moved {
+                            selection.select_iter(&tree_iter);
                         }
-                        None => (),
                     }
+                    None => (),
                 }
+            }
 
-                match key {
-                    Key::Up => {
-                        move_selection(&tree_view, true);
-                        Inhibit(true)
-                    }
-                    Key::Down => {
-                        move_selection(&tree_view, false);
-                        Inhibit(true)
-                    }
-                    _ => Inhibit(false),
+            match key {
+                Key::Up => {
+                    move_selection(&tree_view, true);
+                    Inhibit(true)
                 }
+                Key::Down => {
+                    move_selection(&tree_view, false);
+                    Inhibit(true)
+                }
+                _ => Inhibit(false),
             }
         });
 
@@ -220,43 +215,68 @@ fn build_ui(app: &gtk::Application, config: Config) {
 
     window.add_controller(&key_press_controller);
 
-    window.show()
+    window.show();
 }
 
-fn launch_application() {
+fn launch_application(show_listener: UnixListener) {
     let application = gtk::Application::new(None, Default::default());
+    let show_listener: Arc<UnixListener> = Arc::new(show_listener);
 
-    application.connect_activate(|app| {
+    application.connect_activate(move |app| {
         Config::create_file_if_nonexistent();
 
         let config: Config = Config::from_config_file();
 
-        build_ui(app, config);
+        build_ui(app, config, Arc::clone(&show_listener));
     });
 
     application.run();
 }
 
-fn main() {
-    use psutil::process::Signal;
+enum SendShowSignalOrListen {
+    Listener(UnixListener),
+    SignalSent,
+}
 
-    let my_pid = std::process::id();
+fn send_show_signal_or_listen(
+    socket_path: impl AsRef<Path>,
+) -> Result<SendShowSignalOrListen, std::io::Error> {
+    use std::io::ErrorKind;
 
-    for process in psutil::process::processes().expect("Failed to get process list") {
-        let process = match process {
-            Ok(p) => p,
-            Err(_) => continue,
-        };
-
-        if let Ok(Some(cmd)) = process.cmdline_vec() {
-            if my_pid != process.pid() && cmd.first().map_or(false, |s| s.ends_with("shrug")) {
-                process.send_signal(Signal::SIGUSR1).expect("Failed to send SIGUSR1 signal");
-                return;
+    match UnixListener::bind(&socket_path) {
+        Ok(listener) => Ok(SendShowSignalOrListen::Listener(listener)),
+        Err(e) if e.kind() == ErrorKind::AddrInUse => {
+            // We don't know if there's another shrug listining there or not.  Let's find out.
+            match UnixStream::connect(&socket_path) {
+                Ok(_) => Ok(SendShowSignalOrListen::SignalSent),
+                Err(e) if e.kind() == ErrorKind::ConnectionRefused => {
+                    // There's no one there, we should be able to get bind now.
+                    std::fs::remove_file(&socket_path)?;
+                    Ok(SendShowSignalOrListen::Listener(UnixListener::bind(&socket_path)?))
+                }
+                Err(e) => Err(e),
             }
         }
+        Err(e) => Err(e),
     }
+}
 
-    launch_application();
+fn unix_socket_show_signal_path() -> PathBuf {
+    dirs::runtime_dir().expect("no runtime dir").join("shrug_show.sock")
+}
+
+fn main() {
+    match send_show_signal_or_listen(unix_socket_show_signal_path()) {
+        Ok(SendShowSignalOrListen::Listener(listener)) => {
+            launch_application(listener);
+        }
+        Ok(SendShowSignalOrListen::SignalSent) => {
+            // We sent the signal.  Nothing else to do now.
+        }
+        Err(e) => {
+            eprintln!("error: failed to send signal: {}", e);
+        }
+    }
 }
 
 /* WIP!
