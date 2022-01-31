@@ -36,16 +36,16 @@ include = [
 codecov = { repository = "orium/shrug", branch = "master", service = "github" }
 
 [dependencies]
-gtk4 = { version = "0.4.4", features = ["v4_6"] }
-gdk4 = { version = "0.4.4", features = ["v4_6"] }
-gio = { version = "0.15.2", features = ["v2_70"] }
-glib = "0.15.2"
-toml = "0.5.8"
-dirs = "4.0.0"
-serde = "1.0.133"
-serde_derive = "1.0.133"
-sublime_fuzzy = "0.7.0"
-rayon = "1.5.1"
+gtk4 = { version = "0.4", features = ["v4_6"] }
+gdk4 = { version = "0.4", features = ["v4_6"] }
+gio = { version = "0.15", features = ["v2_70"] }
+glib = "0.15"
+toml = "0.5"
+dirs = "4"
+serde = "1"
+serde_derive = "1"
+sublime_fuzzy = "0.7"
+rayon = "1.5"
 
 [features]
 fatal-warnings = []

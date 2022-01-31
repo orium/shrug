@@ -89,6 +89,7 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
     // WIP! can we do this on every change?
     search_entry.connect_search_changed({
         let tree_view = tree_view.clone();
+        let sorted_store = sorted_store.clone();
 
         move |entry| {
             let text = entry.text().to_string();
@@ -98,8 +99,7 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
                 .map(|alias| {
                     let score: i64 = FuzzySearch::new(&text, alias.key)
                         .best_match()
-                        .map(|m| m.score() as i64)
-                        .unwrap_or(0);
+                        .map_or(0, |m| m.score() as i64);
 
                     (alias, score)
                 })
@@ -125,6 +125,7 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
     fn paste_and_hide(
         window: &gtk::Window,
         tree_view: &gtk::TreeView,
+        sorted_store: &gtk::TreeModelSort,
         search_entry: &gtk::SearchEntry,
     ) {
         if let Some((_, row)) = tree_view.selection().selected() {
@@ -133,14 +134,22 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
             TextClipboard::new(&gdk::Display::default().unwrap()).set(&str);
         }
 
-        hide(window, search_entry);
+        hide(window, search_entry, tree_view, sorted_store);
     }
 
-    fn hide(window: &gtk::Window, search_entry: &gtk::SearchEntry) {
+    fn hide(
+        window: &gtk::Window,
+        search_entry: &gtk::SearchEntry,
+        tree_view: &gtk::TreeView,
+        sorted_store: &gtk::TreeModelSort,
+    ) {
         window.hide();
 
         search_entry.set_text("");
-        // WIP! reset list
+
+        if let Some(first_row) = sorted_store.iter_first() {
+            tree_view.selection().select_iter(&first_row);
+        }
     }
 
     let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
@@ -170,10 +179,10 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
 
             move |_, key, _, _| match key {
                 Key::Return => {
-                    paste_and_hide(&window, &tree_view, &search_entry);
+                    paste_and_hide(&window, &tree_view, &sorted_store, &search_entry);
                 }
                 Key::Escape => {
-                    hide(&window, &search_entry);
+                    hide(&window, &search_entry, &tree_view, &sorted_store);
                 }
                 _ => (),
             }
@@ -182,18 +191,16 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
         controller.connect_key_pressed(move |_, key, _, _| {
             fn move_selection(tree_view: &gtk::TreeView, up: bool) {
                 let selection = tree_view.selection();
-                match selection.selected() {
-                    Some((tree_model, tree_iter)) => {
-                        let moved = match up {
-                            true => tree_model.iter_previous(&tree_iter),
-                            false => tree_model.iter_next(&tree_iter),
-                        };
 
-                        if moved {
-                            selection.select_iter(&tree_iter);
-                        }
+                if let Some((tree_model, tree_iter)) = selection.selected() {
+                    let moved = match up {
+                        true => tree_model.iter_previous(&tree_iter),
+                        false => tree_model.iter_next(&tree_iter),
+                    };
+
+                    if moved {
+                        selection.select_iter(&tree_iter);
                     }
-                    None => (),
                 }
             }
 
@@ -219,7 +226,7 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
 }
 
 fn launch_application(show_listener: UnixListener) {
-    let application = gtk::Application::new(None, Default::default());
+    let application = gtk::Application::new(None, gio::ApplicationFlags::default());
     let show_listener: Arc<UnixListener> = Arc::new(show_listener);
 
     application.connect_activate(move |app| {
@@ -246,7 +253,7 @@ fn send_show_signal_or_listen(
     match UnixListener::bind(&socket_path) {
         Ok(listener) => Ok(SendShowSignalOrListen::Listener(listener)),
         Err(e) if e.kind() == ErrorKind::AddrInUse => {
-            // We don't know if there's another shrug listining there or not.  Let's find out.
+            // We don't know if there's another shrug listening there or not.  Let's find out.
             match UnixStream::connect(&socket_path) {
                 Ok(_) => Ok(SendShowSignalOrListen::SignalSent),
                 Err(e) if e.kind() == ErrorKind::ConnectionRefused => {
