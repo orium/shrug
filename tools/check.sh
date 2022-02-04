@@ -30,11 +30,12 @@ cargo build --features fatal-warnings --all-targets
 echo 'Testing:'
 cargo test  --features fatal-warnings
 echo 'Checking documentation:'
-cargo doc --features fatal-warnings --document-private-items
+cargo doc --features fatal-warnings --no-deps --document-private-items
 
-echo 'Checking links:'
-cargo deadlinks
-
+# TODO Enable this once it works.
+#
+# echo 'Checking links:'
+# cargo deadlinks
 
 # TODO Enable this if we ever want to publish this to crates.io.
 # echo 'Checking packaging:'

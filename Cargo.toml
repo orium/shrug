@@ -26,6 +26,8 @@ license = "MPL-2.0"
 # What to include when packaging.
 include = [
     "/src/**/*.rs",
+    "/src/**/*.toml",
+    "/src/**/*.ui",
     "/Cargo.toml",
     "/LICENSE.md",
     "/README.md",
