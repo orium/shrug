@@ -307,7 +307,5 @@ fn main() {
  * Proper error handling in config
  * Proper error handling in clipboard?
  * Proper error: no unwraps
- * README
- * make portable in terms of signals
- * github workflow
+ * fix github CI
  */
