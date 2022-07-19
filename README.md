@@ -5,9 +5,9 @@
 [![Github stars](https://img.shields.io/github/stars/orium/shrug.svg?logo=github)](https://github.com/orium/shrug/stargazers)
 [![License](https://img.shields.io/crates/l/shrug.svg)](./LICENSE.md)
 
-<!-- cargo-rdme start -->
-
 # ¯\\\_(ツ)\_/¯
+
+<!-- cargo-rdme start -->
 
 Shrug is a small program where you can have a library of named strings.  You can then search for
 those strings to have them readily available in your clipboard.

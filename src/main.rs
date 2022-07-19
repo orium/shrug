@@ -7,8 +7,6 @@
 #![deny(clippy::correctness)]
 #![warn(clippy::pedantic)]
 
-//! # ¯\\\_(ツ)\_/¯
-//!
 //! Shrug is a small program where you can have a library of named strings.  You can then search for
 //! those strings to have them readily available in your clipboard.
 //!
