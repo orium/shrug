@@ -44,7 +44,7 @@ gio = { version = "0.15.12", features = ["v2_70"] }
 glib = "0.15.12"
 toml = "0.5.9"
 dirs = "4.0.0"
-serde = "1.0.139"
+serde = "1.0.141"
 serde_derive = "1.0.139"
 sublime_fuzzy = "0.7.0"
 rayon = "1.5.3"
