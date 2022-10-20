@@ -298,12 +298,11 @@ fn main() {
     }
 }
 
-/* WIP!
+/* TODO
  *
  * config deamonize
  * Organize code
  * Proper error handling in config
  * Proper error handling in clipboard?
  * Proper error: no unwraps
- * fix github CI
  */
