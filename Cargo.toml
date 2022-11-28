@@ -45,7 +45,7 @@ glib = "0.16.0"
 toml = "0.5.9"
 dirs = "4.0.0"
 serde = "1.0.139"
-serde_derive = "1.0.139"
+serde_derive = "1.0.148"
 sublime_fuzzy = "0.7.0"
 rayon = "1.5.3"
 
