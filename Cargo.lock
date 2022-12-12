@@ -274,9 +274,9 @@ dependencies = [
 
 [[package]]
 name = "gio"
-version = "0.16.0"
+version = "0.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3025f17aab38ebbb40d785806cf36c292c4dd6755b05584fc52d34fb87533263"
+checksum = "e8fac6c15256cdf84beb9a4948f786f9605799ad69675ea1b8932753f3aa94cf"
 dependencies = [
  "bitflags",
  "futures-channel",
@@ -307,9 +307,9 @@ dependencies = [
 
 [[package]]
 name = "glib"
-version = "0.16.0"
+version = "0.16.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9d9d01334b55e33e9189fa956dde9885e5439dfa6c448f4d724e222addbf06f2"
+checksum = "89359c8c338310b46300502814fc5a0350bb731ddfea03d0ec725d32163244b7"
 dependencies = [
  "bitflags",
  "futures-channel",
