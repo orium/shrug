@@ -1,7 +1,7 @@
 [package]
 name = "shrug"
 description = "Easy access to your favourite strings"
-version = "0.1.2"
+version = "0.1.3-pre"
 authors = ["Diogo Sousa <diogogsousa@gmail.com>"]
 
 edition = "2021"
