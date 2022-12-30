@@ -2,6 +2,7 @@
 [![Dependency status](https://deps.rs/repo/github/orium/shrug/status.svg)](https://deps.rs/repo/github/orium/shrug)
 [![crates.io](https://img.shields.io/crates/v/shrug.svg)](https://crates.io/crates/shrug)
 [![Downloads](https://img.shields.io/crates/d/shrug.svg)](https://crates.io/crates/shrug)
+[![Downloads github](https://img.shields.io/github/downloads/orium/shrug/total.svg?label=github%20downloads)](https://github.com/orium/shrug/releases)
 [![Github stars](https://img.shields.io/github/stars/orium/shrug.svg?logo=github)](https://github.com/orium/shrug/stargazers)
 [![License](https://img.shields.io/crates/l/shrug.svg)](./LICENSE.md)
 
