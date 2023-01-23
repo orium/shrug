@@ -12,8 +12,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
-
+  check:
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -26,7 +25,7 @@ jobs:
         run: |
           sudo apt-get install -y libpango1.0-dev libgraphene-1.0-dev libgtk-4-dev
 
-      - name: Install rust stable
+      - name: Install rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable

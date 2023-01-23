@@ -6,6 +6,9 @@
 #![cfg_attr(feature = "fatal-warnings", deny(warnings))]
 #![deny(clippy::correctness)]
 #![warn(clippy::pedantic)]
+#![allow(clippy::needless_for_each)]
+#![allow(clippy::match_bool)]
+#![allow(clippy::similar_names)]
 
 //! Shrug is a small program where you can have a library of named strings.  You can then search for
 //! those strings to have them readily available in your clipboard.
@@ -40,6 +43,36 @@ use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use sublime_fuzzy::FuzzySearch;
+
+fn paste_and_hide(
+    window: &gtk::Window,
+    tree_view: &gtk::TreeView,
+    sorted_store: &gtk::TreeModelSort,
+    search_entry: &gtk::SearchEntry,
+) {
+    if let Some((_, row)) = tree_view.selection().selected() {
+        let str: String = tree_view.model().unwrap().get_value(&row, 1).get().unwrap();
+
+        TextClipboard::new(&gdk::Display::default().unwrap()).set(&str);
+    }
+
+    hide(window, search_entry, tree_view, sorted_store);
+}
+
+fn hide(
+    window: &gtk::Window,
+    search_entry: &gtk::SearchEntry,
+    tree_view: &gtk::TreeView,
+    sorted_store: &gtk::TreeModelSort,
+) {
+    window.hide();
+
+    search_entry.set_text("");
+
+    if let Some(first_row) = sorted_store.iter_first() {
+        tree_view.selection().select_iter(&first_row);
+    }
+}
 
 // WIP! review and organize.
 fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListener>) {
@@ -133,36 +166,6 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
             }
         }
     });
-
-    fn paste_and_hide(
-        window: &gtk::Window,
-        tree_view: &gtk::TreeView,
-        sorted_store: &gtk::TreeModelSort,
-        search_entry: &gtk::SearchEntry,
-    ) {
-        if let Some((_, row)) = tree_view.selection().selected() {
-            let str: String = tree_view.model().unwrap().get_value(&row, 1).get().unwrap();
-
-            TextClipboard::new(&gdk::Display::default().unwrap()).set(&str);
-        }
-
-        hide(window, search_entry, tree_view, sorted_store);
-    }
-
-    fn hide(
-        window: &gtk::Window,
-        search_entry: &gtk::SearchEntry,
-        tree_view: &gtk::TreeView,
-        sorted_store: &gtk::TreeModelSort,
-    ) {
-        window.hide();
-
-        search_entry.set_text("");
-
-        if let Some(first_row) = sorted_store.iter_first() {
-            tree_view.selection().select_iter(&first_row);
-        }
-    }
 
     let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
@@ -293,7 +296,7 @@ fn main() {
             // We sent the signal.  Nothing else to do now.
         }
         Err(e) => {
-            eprintln!("error: failed to send signal: {}", e);
+            eprintln!("error: failed to send signal: {e}");
         }
     }
 }
