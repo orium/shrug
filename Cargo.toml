@@ -40,7 +40,7 @@ codecov = { repository = "orium/shrug", branch = "master", service = "github" }
 [dependencies]
 gtk4 = { version = "0.5.0", features = ["v4_6"] }
 gdk4 = { version = "0.5.0", features = ["v4_6"] }
-gio = { version = "0.16.0", features = ["v2_70"] }
+gio = { version = "0.17.2", features = ["v2_70"] }
 glib = "0.16.0"
 toml = "0.5.9"
 dirs = "4.0.0"
