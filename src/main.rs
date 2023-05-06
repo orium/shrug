@@ -235,13 +235,13 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
         controller
     };
 
-    window.add_controller(&key_press_controller);
+    window.add_controller(key_press_controller);
 
     window.show();
 }
 
 fn launch_application(show_listener: UnixListener) {
-    let application = gtk::Application::new(None, gio::ApplicationFlags::default());
+    let application = gtk::Application::new(None::<&str>, gio::ApplicationFlags::default());
     let show_listener: Arc<UnixListener> = Arc::new(show_listener);
 
     application.connect_activate(move |app| {
