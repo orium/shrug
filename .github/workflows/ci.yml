@@ -13,11 +13,7 @@ env:
 
 jobs:
   check:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+    runs-on: ubuntu-latest
 
     steps:
       - name: Install dependencies
@@ -44,3 +40,30 @@ jobs:
 
       - name: Check everything
         run: bash ./tools/check.sh
+
+  msrv:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y libpango1.0-dev libgraphene-1.0-dev libgtk-4-dev
+
+      - name: Install rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          default: true
+
+      - name: Install cargo plugins
+        run: |
+          cargo install cargo-msrv
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Check the minimum supported rust version
+        run: cargo msrv verify
