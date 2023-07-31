@@ -5,6 +5,7 @@ version = "0.1.3-pre"
 authors = ["Diogo Sousa <diogogsousa@gmail.com>"]
 
 edition = "2021"
+rust-version = "1.64.0"
 
 homepage = "https://github.com/orium/shrug"
 repository = "https://github.com/orium/shrug"
@@ -40,8 +41,8 @@ codecov = { repository = "orium/shrug", branch = "master", service = "github" }
 [dependencies]
 gtk4 = { version = "0.6.6", features = ["v4_6"] }
 gdk4 = { version = "0.6.3", features = ["v4_6"] }
-gio = { version = "0.17.9", features = ["v2_70"] }
-glib = "0.17.9"
+gio = { version = "0.17.10", features = ["v2_70"] }
+glib = "0.18.0"
 toml = "0.7.3"
 dirs = "5.0.1"
 serde = "1.0.139"

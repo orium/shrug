@@ -35,7 +35,7 @@ use config::Config;
 use gdk::Key;
 use gdk4 as gdk;
 use gio::prelude::*;
-use glib::signal::Inhibit;
+use gtk4::Inhibit;
 use gtk::prelude::*;
 use gtk4 as gtk;
 use rayon::prelude::*;
@@ -43,6 +43,8 @@ use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use sublime_fuzzy::FuzzySearch;
+use gdk4::glib::Type;
+use glib::{ControlFlow, Priority};
 
 fn paste_and_hide(
     window: &gtk::Window,
@@ -113,7 +115,7 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
     }
 
     let store: gtk::TreeStore =
-        gtk::TreeStore::new(&[glib::Type::STRING, glib::Type::STRING, glib::Type::I64]);
+        gtk::TreeStore::new(&[Type::STRING, Type::STRING, Type::I64]);
 
     for alias in config.aliases() {
         store.set(&store.append(None), &[(0, &alias.key), (1, &alias.value), (2, &0i64)]);
@@ -167,7 +169,7 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
         }
     });
 
-    let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+    let (tx, rx) = glib::MainContext::channel(Priority::DEFAULT);
 
     std::thread::spawn(move || {
         for _ in show_listener.incoming() {
@@ -180,7 +182,7 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
 
         move |_| {
             window.show();
-            glib::Continue(true)
+            ControlFlow::Continue
         }
     });
 
