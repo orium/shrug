@@ -28,18 +28,15 @@ trap on_failure ERR
 echo 'Building:'
 cargo build --features fatal-warnings --all-targets
 echo 'Testing:'
-cargo test  --features fatal-warnings
+cargo test  --features fatal-warnings --all-targets
 echo 'Checking documentation:'
-cargo doc --features fatal-warnings --no-deps --document-private-items
+cargo doc   --features fatal-warnings --no-deps --document-private-items
 
-# TODO Enable this once it works.
-#
-# echo 'Checking links:'
-# cargo deadlinks
+echo 'Checking links:'
+cargo deadlinks
 
-# TODO Enable this if we ever want to publish this to crates.io.
-# echo 'Checking packaging:'
-# cargo package --allow-dirty
+echo 'Checking packaging:'
+cargo package --allow-dirty
 echo 'Checking code style:'
 cargo fmt -- --check
 echo 'Checking readme:'
