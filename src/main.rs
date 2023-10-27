@@ -36,10 +36,10 @@ use gdk::Key;
 use gdk4 as gdk;
 use gdk4::glib::Type;
 use gio::prelude::*;
+use glib::Propagation;
 use glib::{ControlFlow, Priority};
 use gtk::prelude::*;
 use gtk4 as gtk;
-use gtk4::Inhibit;
 use rayon::prelude::*;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
@@ -179,7 +179,7 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
     rx.attach(None, {
         let window = window.clone();
 
-        move |_| {
+        move |()| {
             window.show();
             ControlFlow::Continue
         }
@@ -223,13 +223,13 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
             match key {
                 Key::Up => {
                     move_selection(&tree_view, true);
-                    Inhibit(true)
+                    Propagation::Stop
                 }
                 Key::Down => {
                     move_selection(&tree_view, false);
-                    Inhibit(true)
+                    Propagation::Stop
                 }
-                _ => Inhibit(false),
+                _ => Propagation::Proceed,
             }
         });
 
