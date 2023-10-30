@@ -16,7 +16,7 @@ those strings to have them readily available in your clipboard.
 This is what it looks like:
 
 <p align="center">
-<img src="https://raw.githubusercontent.com/orium/shrug/master/images/shrug.png" width="300">
+<img src="https://raw.githubusercontent.com/orium/shrug/main/images/shrug.png" width="300">
 </p>
 
 I suggest you add a key binding in your window manager to launch shrug.

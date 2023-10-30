@@ -36,7 +36,7 @@ include = [
 ]
 
 [badges]
-codecov = { repository = "orium/shrug", branch = "master", service = "github" }
+codecov = { repository = "orium/shrug", branch = "main", service = "github" }
 
 [dependencies]
 gtk4 = { version = "0.7.3", features = ["v4_6"] }
