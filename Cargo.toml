@@ -43,7 +43,7 @@ gtk4 = { version = "0.7.3", features = ["v4_6"] }
 gdk4 = { version = "0.7.3", features = ["v4_6"] }
 gio = { version = "0.18.2", features = ["v2_70"] }
 glib = "0.18.2"
-toml = "0.8.6"
+toml = "0.8.8"
 dirs = "5.0.1"
 serde = "1.0.190"
 serde_derive = "1.0.190"
