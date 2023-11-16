@@ -735,7 +735,7 @@ dependencies = [
 
 [[package]]
 name = "shrug"
-version = "0.1.3"
+version = "0.1.4-pre"
 dependencies = [
  "dirs",
  "gdk4",
