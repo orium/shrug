@@ -52,3 +52,12 @@ rayon = "1.8.0"
 
 [features]
 fatal-warnings = []
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+correctness = "deny"
+
+match-bool = "allow"
+needless-for-each = "allow"
+similar-names = "allow"

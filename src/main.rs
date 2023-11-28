@@ -4,11 +4,6 @@
  */
 
 #![cfg_attr(feature = "fatal-warnings", deny(warnings))]
-#![deny(clippy::correctness)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::needless_for_each)]
-#![allow(clippy::match_bool)]
-#![allow(clippy::similar_names)]
 
 //! Shrug is a small program where you can have a library of named strings.  You can then search for
 //! those strings to have them readily available in your clipboard.
