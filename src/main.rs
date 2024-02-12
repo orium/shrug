@@ -290,6 +290,7 @@ fn main() {
         }
         Ok(SendShowSignalOrListen::SignalSent) => {
             // We sent the signal.  Nothing else to do now.
+            println!("sent signal to running shrug.");
         }
         Err(e) => {
             eprintln!("error: failed to send signal: {e}");
