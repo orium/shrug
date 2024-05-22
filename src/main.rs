@@ -32,10 +32,10 @@ use gdk4 as gdk;
 use gdk4::glib::Type;
 use gio::prelude::*;
 use glib::Propagation;
-use glib::{ControlFlow, Priority};
 use gtk::prelude::*;
 use gtk4 as gtk;
 use rayon::prelude::*;
+use std::backtrace::Backtrace;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -62,6 +62,7 @@ fn hide(
     tree_view: &gtk::TreeView,
     sorted_store: &gtk::TreeModelSort,
 ) {
+    println!("Hiding: {:?}", Backtrace::force_capture());
     window.hide();
 
     search_entry.set_text("");
@@ -163,20 +164,23 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
         }
     });
 
-    let (tx, rx) = glib::MainContext::channel(Priority::DEFAULT);
+    let (sender, receiver) = async_channel::bounded(1);
 
     std::thread::spawn(move || {
         for _ in show_listener.incoming() {
-            tx.send(()).unwrap();
+            sender.send_blocking(()).unwrap();
         }
     });
 
-    rx.attach(None, {
+    glib::spawn_future_local({
         let window = window.clone();
 
-        move |()| {
-            window.show();
-            ControlFlow::Continue
+        async move {
+            loop {
+                if receiver.recv().await.is_ok() {
+                    window.show();
+                }
+            }
         }
     });
 
