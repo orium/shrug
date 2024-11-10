@@ -12,15 +12,9 @@ repository = "https://github.com/orium/shrug"
 documentation = "https://docs.rs/shrug"
 readme = "README.md"
 
-keywords = [
-    "shortcut",
-    "strings",
-    "clipboard",
-]
+keywords = ["shortcut", "strings", "clipboard"]
 
-categories = [
-    "gui",
-]
+categories = ["gui"]
 
 license = "MPL-2.0"
 
@@ -39,25 +33,28 @@ include = [
 codecov = { repository = "orium/shrug", branch = "main", service = "github" }
 
 [dependencies]
-gtk4 = { version = "0.9.1", features = ["v4_6"] }
+async-channel = "2.3.1"
+dirs = "5.0.1"
 gdk4 = { version = "0.9.0", features = ["v4_6"] }
 gio = { version = "0.20.1", features = ["v2_70"] }
 glib = "0.20.2"
-toml = "0.8.19"
-dirs = "5.0.1"
+gtk4 = { version = "0.9.1", features = ["v4_6"] }
+rayon = "1.10.0"
 serde = "1.0.209"
 serde_derive = "1.0.209"
 sublime_fuzzy = "0.7.0"
-rayon = "1.10.0"
-async-channel = "2.3.1"
+toml = "0.8.19"
 
 [features]
 fatal-warnings = []
 
+[package.metadata.cargo-machete]
+ignored = ["serde"]
+
 [lints.clippy]
 all = { level = "warn", priority = -2 }
-pedantic = { level = "warn", priority = -2 }
 correctness = { level = "deny", priority = -1 }
+pedantic = { level = "warn", priority = -2 }
 
 match-bool = "allow"
 needless-for-each = "allow"
