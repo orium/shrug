@@ -18,6 +18,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install -y libpango1.0-dev libgraphene-1.0-dev libgtk-4-dev
 
       - name: Install rust
@@ -44,6 +45,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install -y libpango1.0-dev libgraphene-1.0-dev libgtk-4-dev
 
       - name: Install rust
@@ -64,6 +66,7 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
+          sudo apt-get update
           sudo apt-get install -y libpango1.0-dev libgraphene-1.0-dev libgtk-4-dev
 
       - name: Install rust
