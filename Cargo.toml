@@ -4,8 +4,8 @@ description = "Easy access to your favourite strings"
 version = "0.1.4-pre"
 authors = ["Diogo Sousa <diogogsousa@gmail.com>"]
 
-edition = "2021"
-rust-version = "1.71.0"
+edition = "2024"
+rust-version = "1.85.0"
 
 homepage = "https://github.com/orium/shrug"
 repository = "https://github.com/orium/shrug"
