@@ -33,17 +33,17 @@ include = [
 codecov = { repository = "orium/shrug", branch = "main", service = "github" }
 
 [dependencies]
-async-channel = "2.3.1"
+async-channel = "2.5.0"
 dirs = "6.0.0"
-gdk4 = { version = "0.9.6", features = ["v4_6"] }
-gio = { version = "0.20.9", features = ["v2_70"] }
-glib = "0.20.9"
-gtk4 = { version = "0.9.6", features = ["v4_6"] }
-rayon = "1.10.0"
-serde = "1.0.218"
-serde_derive = "1.0.218"
+gdk4 = { version = "0.10.1", features = ["v4_6"] }
+gio = { version = "0.21.2", features = ["v2_70"] }
+glib = "0.21.3"
+gtk4 = { version = "0.10.1", features = ["v4_6"] }
+rayon = "1.11.0"
+serde = "1.0.228"
+serde_derive = "1.0.228"
 sublime_fuzzy = "0.7.0"
-toml = "0.8.20"
+toml = "0.9.7"
 
 [features]
 fatal-warnings = []
