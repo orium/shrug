@@ -10,7 +10,7 @@
 
 <!-- cargo-rdme start -->
 
-Shrug is a small program where you can have a library of named strings.  You can then search for
+Shrug is a small program where you can have a library of named strings. You can then search for
 those strings to have them readily available in your clipboard.
 
 This is what it looks like:
@@ -21,9 +21,9 @@ This is what it looks like:
 
 I suggest you add a key binding in your window manager to launch shrug.
 
-Note that shrug keeps running in the background after being launched.  This is because in X.org,
-the clipboard content belongs to the program the content originated from.  If the program
-terminates the content of the clipboard gets cleared.  (An alternative would be to use a
+Note that shrug keeps running in the background after being launched. This is because in X.org,
+the clipboard content belongs to the program the content originated from. If the program
+terminates the content of the clipboard gets cleared. (An alternative would be to use a
 clipboard manager ¯\\\_(ツ)\_/¯.)
 
 <!-- cargo-rdme end -->

@@ -1,6 +1,4 @@
-#![cfg_attr(feature = "fatal-warnings", deny(warnings))]
-
-//! Shrug is a small program where you can have a library of named strings.  You can then search for
+//! Shrug is a small program where you can have a library of named strings. You can then search for
 //! those strings to have them readily available in your clipboard.
 //!
 //! This is what it looks like:
@@ -11,9 +9,9 @@
 //!
 //! I suggest you add a key binding in your window manager to launch shrug.
 //!
-//! Note that shrug keeps running in the background after being launched.  This is because in X.org,
-//! the clipboard content belongs to the program the content originated from.  If the program
-//! terminates the content of the clipboard gets cleared.  (An alternative would be to use a
+//! Note that shrug keeps running in the background after being launched. This is because in X.org,
+//! the clipboard content belongs to the program the content originated from. If the program
+//! terminates the content of the clipboard gets cleared. (An alternative would be to use a
 //! clipboard manager ¯\\\_(ツ)\_/¯.)
 
 mod config;
@@ -263,7 +261,7 @@ fn send_show_signal_or_listen(
     match UnixListener::bind(&socket_path) {
         Ok(listener) => Ok(SendShowSignalOrListen::Listener(listener)),
         Err(e) if e.kind() == ErrorKind::AddrInUse => {
-            // We don't know if there's another shrug listening there or not.  Let's find out.
+            // We don't know if there's another shrug listening there or not. Let's find out.
             match UnixStream::connect(&socket_path) {
                 Ok(_) => Ok(SendShowSignalOrListen::SignalSent),
                 Err(e) if e.kind() == ErrorKind::ConnectionRefused => {
@@ -288,7 +286,7 @@ fn main() {
             launch_application(listener);
         }
         Ok(SendShowSignalOrListen::SignalSent) => {
-            // We sent the signal.  Nothing else to do now.
+            // We sent the signal. Nothing else to do now.
             println!("sent signal to running shrug.");
         }
         Err(e) => {
