@@ -65,22 +65,26 @@ fn hide(
     }
 }
 
-// WIP! review and organize.
-fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListener>) {
-    let glade_src = include_str!("window_main.ui");
+fn move_selection(tree_view: &gtk::TreeView, up: bool) {
+    let selection = tree_view.selection();
 
-    let builder = gtk::Builder::from_string(glade_src);
+    if let Some((tree_model, tree_iter)) = selection.selected() {
+        let moved = match up {
+            true => tree_model.iter_previous(&tree_iter),
+            false => tree_model.iter_next(&tree_iter),
+        };
 
-    let window: gtk::Window = builder.object("window_main").unwrap();
+        if moved {
+            selection.select_iter(&tree_iter);
+        }
+    }
+}
 
-    window.set_application(Some(app));
-
-    let tree_view: gtk::TreeView = builder.object("tree_view").unwrap();
-
+fn setup_tree_columns(tree_view: &gtk::TreeView) {
     {
         let renderer = gtk::CellRendererText::new();
         let column = gtk::TreeViewColumn::new();
-        column.pack_start(&renderer, true); // WIP! NEEDED?
+        column.pack_start(&renderer, true);
         column.add_attribute(&renderer, "text", 0);
         column.set_sort_order(gtk::SortType::Descending);
         tree_view.append_column(&column);
@@ -97,31 +101,30 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
     {
         let column = gtk::TreeViewColumn::new();
         column.set_title("Value");
-        column.set_clickable(true); // WIP! get rid of these
+        column.set_clickable(true);
         column.set_sort_indicator(true);
-        column.set_sort_column_id(2); // WIP! gtk::SortType::Descending
+        column.set_sort_column_id(2);
         tree_view.append_column(&column);
     }
+}
 
-    let store: gtk::TreeStore = gtk::TreeStore::new(&[Type::STRING, Type::STRING, Type::I64]);
+fn create_store(config: &Config) -> gtk::TreeStore {
+    let store = gtk::TreeStore::new(&[Type::STRING, Type::STRING, Type::I64]);
 
     for alias in config.aliases() {
         store.set(&store.append(None), &[(0, &alias.key), (1, &alias.value), (2, &0i64)]);
     }
 
-    let sorted_store: gtk::TreeModelSort = gtk::TreeModelSort::with_model(&store);
+    store
+}
 
-    sorted_store.set_sort_column_id(gtk::SortColumn::Index(2), gtk::SortType::Descending);
-
-    tree_view.set_model(Some(&sorted_store));
-
-    if let Some(first_row) = sorted_store.iter_first() {
-        tree_view.selection().select_iter(&first_row);
-    }
-
-    let search_entry: gtk::SearchEntry = builder.object("search_entry").unwrap();
-
-    // WIP! can we do this on every change?
+fn connect_search_handler(
+    search_entry: &gtk::SearchEntry,
+    tree_view: &gtk::TreeView,
+    sorted_store: &gtk::TreeModelSort,
+    store: gtk::TreeStore,
+    config: Config,
+) {
     search_entry.connect_search_changed({
         let tree_view = tree_view.clone();
         let sorted_store = sorted_store.clone();
@@ -156,7 +159,9 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
             }
         }
     });
+}
 
+fn spawn_show_listener(show_listener: Arc<UnixListener>, window: &gtk::Window) {
     let (sender, receiver) = async_channel::bounded(1);
 
     std::thread::spawn(move || {
@@ -176,59 +181,78 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
             }
         }
     });
+}
 
-    let key_press_controller: gtk::EventControllerKey = {
+fn create_key_controller(
+    window: &gtk::Window,
+    tree_view: &gtk::TreeView,
+    sorted_store: &gtk::TreeModelSort,
+    search_entry: &gtk::SearchEntry,
+) -> gtk::EventControllerKey {
+    let controller = gtk::EventControllerKey::new();
+
+    // For whatever reason these keys can only be observed in the "release_key" event.
+    controller.connect_key_released({
         let window = window.clone();
-        let controller = gtk::EventControllerKey::new();
+        let tree_view = tree_view.clone();
+        let sorted_store = sorted_store.clone();
+        let search_entry = search_entry.clone();
 
-        // For whatever reason these keys can only be observed in the "release_key" event.
-        controller.connect_key_released({
-            let tree_view = tree_view.clone();
-
-            move |_, key, _, _| match key {
-                Key::Return => {
-                    paste_and_hide(&window, &tree_view, &sorted_store, &search_entry);
-                }
-                Key::Escape => {
-                    hide(&window, &search_entry, &tree_view, &sorted_store);
-                }
-                _ => (),
+        move |_, key, _, _| match key {
+            Key::Return => {
+                paste_and_hide(&window, &tree_view, &sorted_store, &search_entry);
             }
-        });
-
-        controller.connect_key_pressed(move |_, key, _, _| {
-            fn move_selection(tree_view: &gtk::TreeView, up: bool) {
-                let selection = tree_view.selection();
-
-                if let Some((tree_model, tree_iter)) = selection.selected() {
-                    let moved = match up {
-                        true => tree_model.iter_previous(&tree_iter),
-                        false => tree_model.iter_next(&tree_iter),
-                    };
-
-                    if moved {
-                        selection.select_iter(&tree_iter);
-                    }
-                }
+            Key::Escape => {
+                hide(&window, &search_entry, &tree_view, &sorted_store);
             }
+            _ => (),
+        }
+    });
 
-            match key {
-                Key::Up => {
-                    move_selection(&tree_view, true);
-                    Propagation::Stop
-                }
-                Key::Down => {
-                    move_selection(&tree_view, false);
-                    Propagation::Stop
-                }
-                _ => Propagation::Proceed,
+    controller.connect_key_pressed({
+        let tree_view = tree_view.clone();
+
+        move |_, key, _, _| match key {
+            Key::Up => {
+                move_selection(&tree_view, true);
+                Propagation::Stop
             }
-        });
+            Key::Down => {
+                move_selection(&tree_view, false);
+                Propagation::Stop
+            }
+            _ => Propagation::Proceed,
+        }
+    });
 
-        controller
-    };
+    controller
+}
 
-    window.add_controller(key_press_controller);
+fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListener>) {
+    let builder = gtk::Builder::from_string(include_str!("window_main.ui"));
+
+    let window: gtk::Window = builder.object("window_main").unwrap();
+    window.set_application(Some(app));
+
+    let tree_view: gtk::TreeView = builder.object("tree_view").unwrap();
+    setup_tree_columns(&tree_view);
+
+    let store = create_store(&config);
+    let sorted_store = gtk::TreeModelSort::with_model(&store);
+    sorted_store.set_sort_column_id(gtk::SortColumn::Index(2), gtk::SortType::Descending);
+    tree_view.set_model(Some(&sorted_store));
+
+    if let Some(first_row) = sorted_store.iter_first() {
+        tree_view.selection().select_iter(&first_row);
+    }
+
+    let search_entry: gtk::SearchEntry = builder.object("search_entry").unwrap();
+    connect_search_handler(&search_entry, &tree_view, &sorted_store, store, config);
+
+    spawn_show_listener(show_listener, &window);
+
+    let key_controller = create_key_controller(&window, &tree_view, &sorted_store, &search_entry);
+    window.add_controller(key_controller);
 
     window.show();
 }
@@ -286,7 +310,6 @@ fn main() {
             launch_application(listener);
         }
         Ok(SendShowSignalOrListen::SignalSent) => {
-            // We sent the signal. Nothing else to do now.
             println!("sent signal to running shrug.");
         }
         Err(e) => {
@@ -298,7 +321,6 @@ fn main() {
 /* TODO
  *
  * config deamonize
- * Organize code
  * Proper error handling in config
  * Proper error handling in clipboard?
  * Proper error: no unwraps
