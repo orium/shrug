@@ -33,6 +33,9 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use sublime_fuzzy::FuzzySearch;
 
+const WINDOW_SCREEN_WIDTH_FRACTION: f64 = 0.15;
+const WINDOW_SCREEN_HEIGHT_FRACTION: f64 = 0.30;
+
 #[derive(Debug, thiserror::Error)]
 enum Error {
     #[error("config error: {0}")]
@@ -249,6 +252,28 @@ fn create_key_controller(
     controller
 }
 
+fn set_size_proportional_to_screen(
+    window: &gtk::Window,
+    width_fraction: f64,
+    height_fraction: f64,
+) -> Result<(), Error> {
+    let display = gdk::Display::default().ok_or(Error::NoDisplay)?;
+    let monitor = display
+        .monitors()
+        .item(0)
+        .and_then(|m| m.downcast::<gdk::Monitor>().ok())
+        .ok_or(Error::NoDisplay)?;
+
+    let geometry = monitor.geometry();
+    #[allow(clippy::cast_possible_truncation)]
+    let target_width = (f64::from(geometry.width()) * width_fraction) as i32;
+    #[allow(clippy::cast_possible_truncation)]
+    let target_height = (f64::from(geometry.height()) * height_fraction) as i32;
+
+    window.set_default_size(target_width, target_height);
+    Ok(())
+}
+
 fn build_ui(
     app: &gtk::Application,
     config: Config,
@@ -281,6 +306,14 @@ fn build_ui(
 
     let key_controller = create_key_controller(&window, &tree_view, &sorted_store, &search_entry);
     window.add_controller(key_controller);
+
+    if let Err(e) = set_size_proportional_to_screen(
+        &window,
+        WINDOW_SCREEN_WIDTH_FRACTION,
+        WINDOW_SCREEN_HEIGHT_FRACTION,
+    ) {
+        eprintln!("warning: could not set window size: {e}");
+    }
 
     window.show();
     Ok(())
