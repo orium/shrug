@@ -85,10 +85,10 @@ fn hide(
 fn move_selection(tree_view: &gtk::TreeView, up: bool) {
     let selection = tree_view.selection();
 
-    if let Some((tree_model, tree_iter)) = selection.selected() {
+    if let Some((tree_model, mut tree_iter)) = selection.selected() {
         let moved = match up {
-            true => tree_model.iter_previous(&tree_iter),
-            false => tree_model.iter_next(&tree_iter),
+            true => tree_model.iter_previous(&mut tree_iter),
+            false => tree_model.iter_next(&mut tree_iter),
         };
 
         if moved {
