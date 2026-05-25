@@ -40,6 +40,7 @@ gio = { version = "0.21.2", features = ["v2_70"] }
 glib = "0.21.3"
 gtk4 = { version = "0.10.1", features = ["v4_6"] }
 rayon = "1.11.0"
+thiserror = "2.0.18"
 serde = "1.0.228"
 serde_derive = "1.0.228"
 sublime_fuzzy = "0.7.0"

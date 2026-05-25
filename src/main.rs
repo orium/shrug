@@ -28,25 +28,44 @@ use glib::Propagation;
 use gtk::prelude::*;
 use gtk4 as gtk;
 use rayon::prelude::*;
-use std::backtrace::Backtrace;
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use sublime_fuzzy::FuzzySearch;
+
+#[derive(Debug, thiserror::Error)]
+enum Error {
+    #[error("config error: {0}")]
+    Config(#[from] config::ConfigError),
+    #[error("runtime directory not available")]
+    NoRuntimeDir,
+    #[error("socket error: {0}")]
+    Socket(std::io::Error),
+    #[error("UI widget '{0}' not found")]
+    MissingWidget(&'static str),
+    #[error("no default display available")]
+    NoDisplay,
+    #[error("tree view has no model")]
+    NoTreeViewModel,
+    #[error("failed to read string value from model")]
+    ModelStringRead,
+}
 
 fn paste_and_hide(
     window: &gtk::Window,
     tree_view: &gtk::TreeView,
     sorted_store: &gtk::TreeModelSort,
     search_entry: &gtk::SearchEntry,
-) {
+) -> Result<(), Error> {
     if let Some((_, row)) = tree_view.selection().selected() {
-        let str: String = tree_view.model().unwrap().get_value(&row, 1).get().unwrap();
-
-        TextClipboard::new(&gdk::Display::default().unwrap()).set(&str);
+        let model = tree_view.model().ok_or(Error::NoTreeViewModel)?;
+        let str: String = model.get_value(&row, 1).get().map_err(|_| Error::ModelStringRead)?;
+        let display = gdk::Display::default().ok_or(Error::NoDisplay)?;
+        TextClipboard::new(&display).set(&str);
     }
 
     hide(window, search_entry, tree_view, sorted_store);
+    Ok(())
 }
 
 fn hide(
@@ -55,9 +74,7 @@ fn hide(
     tree_view: &gtk::TreeView,
     sorted_store: &gtk::TreeModelSort,
 ) {
-    println!("Hiding: {:?}", Backtrace::force_capture());
     window.hide();
-
     search_entry.set_text("");
 
     if let Some(first_row) = sorted_store.iter_first() {
@@ -166,7 +183,9 @@ fn spawn_show_listener(show_listener: Arc<UnixListener>, window: &gtk::Window) {
 
     std::thread::spawn(move || {
         for _ in show_listener.incoming() {
-            sender.send_blocking(()).unwrap();
+            if sender.send_blocking(()).is_err() {
+                break;
+            }
         }
     });
 
@@ -200,7 +219,9 @@ fn create_key_controller(
 
         move |_, key, _, _| match key {
             Key::Return => {
-                paste_and_hide(&window, &tree_view, &sorted_store, &search_entry);
+                if let Err(e) = paste_and_hide(&window, &tree_view, &sorted_store, &search_entry) {
+                    eprintln!("error: {e}");
+                }
             }
             Key::Escape => {
                 hide(&window, &search_entry, &tree_view, &sorted_store);
@@ -228,13 +249,19 @@ fn create_key_controller(
     controller
 }
 
-fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListener>) {
+fn build_ui(
+    app: &gtk::Application,
+    config: Config,
+    show_listener: Arc<UnixListener>,
+) -> Result<(), Error> {
     let builder = gtk::Builder::from_string(include_str!("window_main.ui"));
 
-    let window: gtk::Window = builder.object("window_main").unwrap();
+    let window: gtk::Window =
+        builder.object("window_main").ok_or(Error::MissingWidget("window_main"))?;
     window.set_application(Some(app));
 
-    let tree_view: gtk::TreeView = builder.object("tree_view").unwrap();
+    let tree_view: gtk::TreeView =
+        builder.object("tree_view").ok_or(Error::MissingWidget("tree_view"))?;
     setup_tree_columns(&tree_view);
 
     let store = create_store(&config);
@@ -246,7 +273,8 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
         tree_view.selection().select_iter(&first_row);
     }
 
-    let search_entry: gtk::SearchEntry = builder.object("search_entry").unwrap();
+    let search_entry: gtk::SearchEntry =
+        builder.object("search_entry").ok_or(Error::MissingWidget("search_entry"))?;
     connect_search_handler(&search_entry, &tree_view, &sorted_store, store, config);
 
     spawn_show_listener(show_listener, &window);
@@ -255,6 +283,13 @@ fn build_ui(app: &gtk::Application, config: Config, show_listener: Arc<UnixListe
     window.add_controller(key_controller);
 
     window.show();
+    Ok(())
+}
+
+fn on_activate(app: &gtk::Application, show_listener: &Arc<UnixListener>) -> Result<(), Error> {
+    Config::create_file_if_nonexistent()?;
+    let config = Config::from_config_file()?;
+    build_ui(app, config, Arc::clone(show_listener))
 }
 
 fn launch_application(show_listener: UnixListener) {
@@ -262,11 +297,10 @@ fn launch_application(show_listener: UnixListener) {
     let show_listener: Arc<UnixListener> = Arc::new(show_listener);
 
     application.connect_activate(move |app| {
-        Config::create_file_if_nonexistent();
-
-        let config: Config = Config::from_config_file();
-
-        build_ui(app, config, Arc::clone(&show_listener));
+        if let Err(e) = on_activate(app, &show_listener) {
+            eprintln!("error: {e}");
+            app.quit();
+        }
     });
 
     application.run();
@@ -279,7 +313,7 @@ enum SendShowSignalOrListen {
 
 fn send_show_signal_or_listen(
     socket_path: impl AsRef<Path>,
-) -> Result<SendShowSignalOrListen, std::io::Error> {
+) -> Result<SendShowSignalOrListen, Error> {
     use std::io::ErrorKind;
 
     match UnixListener::bind(&socket_path) {
@@ -289,39 +323,42 @@ fn send_show_signal_or_listen(
             match UnixStream::connect(&socket_path) {
                 Ok(_) => Ok(SendShowSignalOrListen::SignalSent),
                 Err(e) if e.kind() == ErrorKind::ConnectionRefused => {
-                    // There's no one there, we should be able to get bind now.
-                    std::fs::remove_file(&socket_path)?;
-                    Ok(SendShowSignalOrListen::Listener(UnixListener::bind(&socket_path)?))
+                    // There's no one there, we should be able to bind now.
+                    std::fs::remove_file(&socket_path).map_err(Error::Socket)?;
+                    UnixListener::bind(&socket_path)
+                        .map(SendShowSignalOrListen::Listener)
+                        .map_err(Error::Socket)
                 }
-                Err(e) => Err(e),
+                Err(e) => Err(Error::Socket(e)),
             }
         }
-        Err(e) => Err(e),
+        Err(e) => Err(Error::Socket(e)),
     }
 }
 
-fn unix_socket_show_signal_path() -> PathBuf {
-    dirs::runtime_dir().expect("no runtime dir").join("shrug_show.sock")
+fn unix_socket_show_signal_path() -> Result<PathBuf, Error> {
+    Ok(dirs::runtime_dir().ok_or(Error::NoRuntimeDir)?.join("shrug_show.sock"))
+}
+
+fn run() -> Result<(), Error> {
+    match send_show_signal_or_listen(unix_socket_show_signal_path()?)? {
+        SendShowSignalOrListen::Listener(listener) => {
+            launch_application(listener);
+        }
+        SendShowSignalOrListen::SignalSent => {
+            println!("sent signal to running shrug.");
+        }
+    }
+    Ok(())
 }
 
 fn main() {
-    match send_show_signal_or_listen(unix_socket_show_signal_path()) {
-        Ok(SendShowSignalOrListen::Listener(listener)) => {
-            launch_application(listener);
-        }
-        Ok(SendShowSignalOrListen::SignalSent) => {
-            println!("sent signal to running shrug.");
-        }
-        Err(e) => {
-            eprintln!("error: failed to send signal: {e}");
-        }
+    if let Err(e) = run() {
+        eprintln!("error: {e}");
     }
 }
 
 /* TODO
  *
  * config deamonize
- * Proper error handling in config
- * Proper error handling in clipboard?
- * Proper error: no unwraps
  */
