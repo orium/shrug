@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.1.5
+
+* Size the window as a percentage of the screen size.
+* Updated dependencies.
+
 ## 0.1.4
 
 * Relicensed project under the MIT license.
