@@ -1,5 +1,10 @@
 # Release notes
 
+## 0.1.6
+
+* Migrate to `taiki-e/upload-rust-binary-action` for release binaries.
+* Updated dependencies.
+
 ## 0.1.5
 
 * Size the window as a percentage of the screen size.
