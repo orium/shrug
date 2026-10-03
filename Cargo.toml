@@ -7,7 +7,6 @@ authors = ["Diogo Sousa <diogogsousa@gmail.com>"]
 edition = "2024"
 rust-version = "1.92.0"
 
-homepage = "https://github.com/orium/shrug"
 repository = "https://github.com/orium/shrug"
 documentation = "https://docs.rs/shrug"
 readme = "README.md"
