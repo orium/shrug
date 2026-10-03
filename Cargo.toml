@@ -54,7 +54,7 @@ all = { level = "warn", priority = -2 }
 correctness = { level = "deny", priority = -1 }
 pedantic = { level = "warn", priority = -2 }
 
-match-bool = "allow"
-needless-for-each = "allow"
-similar-names = "allow"
-too-many-lines = "allow"
+match_bool = "allow"
+needless_for_each = "allow"
+similar_names = "allow"
+too_many_lines = "allow"
